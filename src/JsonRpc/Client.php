@@ -57,7 +57,7 @@ class Client
         private readonly bool $sslVerify = true,
         ?HttpClient $httpClient = null,
     ) {
-        if ($httpClient instanceof \GuzzleHttp\Client) {
+        if ($httpClient instanceof HttpClient) {
             $this->httpClient = $httpClient;
 
             return;

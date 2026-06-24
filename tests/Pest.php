@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use Athwari\LaravelOdooApi\Tests\Integration\IntegrationTestCase;
+use Athwari\LaravelOdooApi\Tests\TestCase;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,5 +15,5 @@ declare(strict_types=1);
 |
 */
 
-uses(Athwari\LaravelOdooApi\Tests\TestCase::class)->in('Unit');
-uses(Athwari\LaravelOdooApi\Tests\Integration\IntegrationTestCase::class)->in('Feature');
+uses(TestCase::class)->in('Unit');
+uses(IntegrationTestCase::class)->in('Feature');

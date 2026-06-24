@@ -45,7 +45,7 @@ class DateTimeImmutableCast extends Cast
         try {
             $dt = new DateTimeImmutable($raw);
 
-            if ($this->timezone instanceof \DateTimeZone) {
+            if ($this->timezone instanceof DateTimeZone) {
                 $dt = $dt->setTimezone($this->timezone);
             }
 

@@ -17,7 +17,7 @@ abstract class Endpoint
 
     public function getClient(bool $fresh = false): Client
     {
-        if ($fresh || ! $this->client instanceof \Athwari\LaravelOdooApi\JsonRpc\Client) {
+        if ($fresh || ! $this->client instanceof Client) {
             $config = $this->getConfig();
             $this->client = new Client(
                 $config->getHost(),
