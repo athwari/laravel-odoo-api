@@ -147,7 +147,16 @@ test('cast', function () {
     CastHandler::reset();
     CastHandler::registerCast(new DateTimeCast());
 
-    $item = PurchaseOrder::query()->first();
+    $partner = new Partner();
+    $partner->name = 'Test Partner';
+    $partner->save();
+
+    $order = new PurchaseOrder();
+    $order->partnerId = $partner->id;
+    $order->save();
+
+    $item = PurchaseOrder::query()->where('id', '=', $order->id)->first();
+    expect($item)->not->toBeNull();
     expect($item->orderDate)->not->toBeNull();
     expect($item->orderDate)->toBeInstanceOf(\DateTime::class);
 });
@@ -156,7 +165,16 @@ test('nullable cast', function () {
     CastHandler::reset();
     CastHandler::registerCast(new DateTimeCast());
 
-    $item = PurchaseOrder::query()->first();
+    $partner = new Partner();
+    $partner->name = 'Test Partner';
+    $partner->save();
+
+    $order = new PurchaseOrder();
+    $order->partnerId = $partner->id;
+    $order->save();
+
+    $item = PurchaseOrder::query()->where('id', '=', $order->id)->first();
+    expect($item)->not->toBeNull();
     expect($item->approveDate)->toBeNull();
 });
 
