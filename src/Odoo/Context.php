@@ -45,7 +45,7 @@ final class Context
      */
     public function setDefaults(?Context $context): static
     {
-        if ($context instanceof \Athwari\LaravelOdooApi\Odoo\Context) {
+        if ($context instanceof Context) {
             $this->lang ??= $context->lang;
             $this->timezone ??= $context->timezone;
             $this->companyId ??= $context->companyId;
