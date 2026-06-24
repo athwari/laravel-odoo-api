@@ -13,6 +13,11 @@ jobs:
   test:
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }}
     runs-on: ubuntu-latest
+    env:
+      ODOO_HOST: http://localhost:8069
+      ODOO_USERNAME: admin
+      ODOO_PASSWORD: admin
+      ODOO_DATABASE: odoo
 
     strategy:
       fail-fast: false
@@ -66,6 +71,11 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/php.json"
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
+      - name: Start Odoo test stack
+        run: |
+          docker compose -f odoo-test/docker-compose.yaml up -d
+          timeout 180 bash -c 'until curl -sf http://localhost:8069/ >/dev/null; do echo "Waiting for Odoo..."; sleep 5; done'
+
       - name: Validate composer.json
         run: composer validate --strict
 
@@ -85,3 +95,7 @@ jobs:
 
       - name: Execute tests
         run: vendor/bin/pest
+
+      - name: Stop Odoo test stack
+        if: always()
+        run: docker compose -f odoo-test/docker-compose.yaml down -v
