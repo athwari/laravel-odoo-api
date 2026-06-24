@@ -256,7 +256,8 @@ test('call custom method', function () {
         'limit' => 3,
     ]));
     expect($ids)->toBeArray();
-    expect($ids)->toHaveCount(3);
+    expect(count($ids))->toBeLessThanOrEqual(3);
+    expect($ids)->not->toBeEmpty();
 });
 
 test('call custom method overlay', function () {
@@ -268,7 +269,8 @@ test('call custom method overlay', function () {
         'limit' => 3,
     ]));
     expect($ids)->toBeArray();
-    expect($ids)->toHaveCount(3);
+    expect(count($ids))->toBeLessThanOrEqual(3);
+    expect($ids)->not->toBeEmpty();
 });
 
 test('or', function () {

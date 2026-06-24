@@ -73,9 +73,6 @@
     "config": {
         "sort-packages": true,
         "preferred-install": "dist",
-        "audit": {
-            "block-insecure": false
-        },
         "policy": {
             "advisories": {
                 "block": false
