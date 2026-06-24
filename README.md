@@ -1,11 +1,16 @@
-# athwari/laravel-odoo-api
+# athwari/laravel-odoo-api-odoo-api
 
-PHP Odoo JSON-RPC connector with an attribute-based model layer, prepared for Laravel integration.
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/athwari/laravel-odoo-api.svg?style=flat-square)](https://packagist.org/packages/athwari/laravel-odoo-api)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/athwari/laravel-odoo-api/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/athwari/laravel-odoo-api/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/athwari/laravel-odoo-api/fix-php-code-style.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/athwari/laravel-odoo-api/actions?query=workflow%3A"Fix+PHP+code+style"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/athwari/laravel-odoo-api?style=flat-square)](https://packagist.org/packages/athwari/laravel-odoo-api)
+
+PHP Odoo JSON-RPC connector with an attribute-based model layer, prepared for laravel-odoo-api integration.
 
 ## Installation
 
 ```bash
-composer require athwari/laravel-odoo-api
+composer require athwari/laravel-odoo-api-odoo-api
 ```
 
 Publish the config:
@@ -44,9 +49,9 @@ ODOO_COMPANY_ID=
 ## Basic usage
 
 ```php
-use Athwari\LaravelOdooApi\Odoo;
+use Athwari\laravel-odoo-apiOdooApi\Odoo;
 
-$odoo = app(Odoo::class);   // resolved from the container in Laravel
+$odoo = app(Odoo::class);   // resolved from the container in laravel-odoo-api
 
 $partners = $odoo->model('res.partner')
     ->where('active', '=', true)
@@ -64,7 +69,7 @@ $odoo->model('res.partner')
 Or via the Facade:
 
 ```php
-use Athwari\LaravelOdooApi\Facades\Odoo;
+use Athwari\laravel-odoo-apiOdooApi\Facades\Odoo;
 
 Odoo::model('res.partner')->where('active', '=', true)->get();
 ```
@@ -92,13 +97,13 @@ are not subject to this guard.
 ## Models
 
 ```php
-use Athwari\LaravelOdooApi\Attributes\BelongsTo;
-use Athwari\LaravelOdooApi\Attributes\Field;
-use Athwari\LaravelOdooApi\Attributes\HasMany;
-use Athwari\LaravelOdooApi\Attributes\Key;
-use Athwari\LaravelOdooApi\Attributes\Model;
-use Athwari\LaravelOdooApi\Odoo\Models\LazyHasMany;
-use Athwari\LaravelOdooApi\Odoo\OdooModel;
+use Athwari\laravel-odoo-apiOdooApi\Attributes\BelongsTo;
+use Athwari\laravel-odoo-apiOdooApi\Attributes\Field;
+use Athwari\laravel-odoo-apiOdooApi\Attributes\HasMany;
+use Athwari\laravel-odoo-apiOdooApi\Attributes\Key;
+use Athwari\laravel-odoo-apiOdooApi\Attributes\Model;
+use Athwari\laravel-odoo-apiOdooApi\Odoo\Models\LazyHasMany;
+use Athwari\laravel-odoo-apiOdooApi\Odoo\OdooModel;
 
 #[Model('res.partner')]
 class Partner extends OdooModel
@@ -142,7 +147,7 @@ $partner->save();               // updates
 ```
 
 `OdooModel::boot($odoo)` binds the Odoo client used by all model subclasses.
-The service provider calls this automatically in Laravel. For standalone use:
+The service provider calls this automatically in laravel-odoo-api. For standalone use:
 
 ```php
 $odoo = new Odoo(new Config($db, $host, $user, $pass));
@@ -158,8 +163,8 @@ to walk a deep hierarchy, do it with explicit `find()` calls.
 Cast Odoo's raw field values to and from PHP types:
 
 ```php
-use Athwari\LaravelOdooApi\Odoo\Casts\DateTimeCast;
-use Athwari\LaravelOdooApi\Odoo\Casts\DateTimeImmutableCast;
+use Athwari\laravel-odoo-apiOdooApi\Odoo\Casts\DateTimeCast;
+use Athwari\laravel-odoo-apiOdooApi\Odoo\Casts\DateTimeImmutableCast;
 
 // Basic UTC datetime cast
 Odoo::registerCast(new DateTimeCast());
@@ -180,7 +185,7 @@ typically in a service provider's `boot()` method.
 ### Custom casts
 
 ```php
-use Athwari\LaravelOdooApi\Odoo\Casts\Cast;
+use Athwari\laravel-odoo-apiOdooApi\Odoo\Casts\Cast;
 
 class MoneyCast extends Cast
 {
