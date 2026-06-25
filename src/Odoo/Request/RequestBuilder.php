@@ -81,6 +81,61 @@ class RequestBuilder
         return collect($this->get());
     }
 
+    /**
+     * Get the results as a paginator.
+     *
+     * @param int $perPage
+     * @param string $pageName
+     * @param int|null $page
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     * @throws ConfigurationException
+     */
+    public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        if (! class_exists(\Illuminate\Pagination\LengthAwarePaginator::class)) {
+            throw new ConfigurationException('Pagination requires the illuminate/pagination package.');
+        }
+
+        $page = $page ?: \Illuminate\Pagination\Paginator::resolveCurrentPage($pageName);
+        $total = $this->count();
+        $results = $total ? $this->offset(($page - 1) * $perPage)->limit($perPage)->collect() : collect();
+
+        return new \Illuminate\Pagination\LengthAwarePaginator($results, $total, $perPage, $page, [
+            'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
+        ]);
+    }
+
+    /**
+     * Chunk the results of the query.
+     *
+     * @param int $count
+     * @param callable(\Illuminate\Support\Collection<int, \stdClass>, int): (bool|void) $callback
+     * @return bool
+     */
+    public function chunk(int $count, callable $callback): bool
+    {
+        $page = 1;
+
+        do {
+            $results = $this->offset(($page - 1) * $count)->limit($count)->collect();
+
+            $countResults = $results->count();
+
+            if ($countResults == 0) {
+                break;
+            }
+
+            if ($callback($results, $page) === false) {
+                return false;
+            }
+
+            $page++;
+        } while ($countResults == $count);
+
+        return true;
+    }
+
     public function first(): ?object
     {
         $this->limit = 1;
@@ -142,6 +197,24 @@ class RequestBuilder
     }
 
     /**
+     * Create multiple records in a single RPC call.
+     *
+     * @param array<int, array<string, mixed>> $records
+     * @return array<int, int> List of created record IDs
+     * @throws ValidationException
+     */
+    public function createMany(array $records): array
+    {
+        if ($records === []) {
+            throw new ValidationException("Cannot create records in '{$this->model}' with empty data.");
+        }
+
+        $result = $this->endpoint->executeKw($this->model, 'create', [$records], $this->options);
+
+        return is_array($result) ? $result : [];
+    }
+
+    /**
      * Update all records matching the current domain.
      *
      * Requires at least one where() condition to be set, to prevent
@@ -162,6 +235,55 @@ class RequestBuilder
         }
 
         return $this->endpoint->write($this->model, $ids, $values, $this->options);
+    }
+
+    /**
+     * Update multiple records with specific values for each.
+     * 
+     * Groups records with identical values into single RPC calls to optimize network performance.
+     *
+     * @param array<int, array{id: int|string, values: array<string, mixed>}> $payloads
+     * @return bool
+     * @throws ValidationException
+     */
+    public function writeMany(array $payloads): bool
+    {
+        if ($payloads === []) {
+            throw new ValidationException("Cannot update records in '{$this->model}' with empty data.");
+        }
+
+        $grouped = [];
+
+        foreach ($payloads as $index => $payload) {
+            if (! isset($payload['id']) || ! isset($payload['values']) || ! is_array($payload['values'])) {
+                throw new ValidationException("writeMany payload at index {$index} must contain 'id' and an array of 'values'.");
+            }
+
+            $id = $payload['id'];
+            $values = $payload['values'];
+
+            if ($values === []) {
+                continue;
+            }
+
+            ksort($values);
+            $hash = md5(json_encode($values) ?: '');
+
+            if (! isset($grouped[$hash])) {
+                $grouped[$hash] = [
+                    'ids' => [],
+                    'values' => $values,
+                ];
+            }
+
+            $grouped[$hash]['ids'][] = $id;
+        }
+
+        foreach ($grouped as $group) {
+            $this->endpoint->write($this->model, $group['ids'], $group['values'], $this->options);
+        }
+
+        return true;
     }
 
     public function update(array $values): bool

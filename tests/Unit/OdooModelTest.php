@@ -59,6 +59,89 @@ test('find returns null when no record found', function () use ($bindOdoo) {
     expect(TestPartner::find(999))->toBeNull();
 });
 
+test('paginate returns a LengthAwarePaginator of models', function () use ($bindOdoo) {
+    $bindOdoo->call($this, [
+        $this->jsonRpcResult(15), // count()
+        $this->jsonRpcResult([
+            (object) ['id' => 1, 'name' => 'Acme Corp', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => []],
+            (object) ['id' => 2, 'name' => 'Globex', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => []],
+        ]), // get()
+    ]);
+
+    $paginator = TestPartner::query()->paginate(2);
+
+    expect($paginator)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+        ->and($paginator->total())->toBe(15)
+        ->and($paginator->perPage())->toBe(2)
+        ->and($paginator->items())->toHaveCount(2)
+        ->and($paginator->items()[0])->toBeInstanceOf(TestPartner::class)
+        ->and($paginator->items()[0]->name)->toBe('Acme Corp');
+});
+
+test('paginate preserves with() eager loading and does not N+1', function () use ($bindOdoo) {
+    $bindOdoo->call($this, [
+        $this->jsonRpcResult(15), // count()
+        $this->jsonRpcResult([ // get() items
+            (object) ['id' => 1, 'name' => 'Child A', 'email' => null, 'active' => true, 'parent_id' => [99, 'Parent Co'], 'child_ids' => []],
+            (object) ['id' => 2, 'name' => 'Child B', 'email' => null, 'active' => true, 'parent_id' => [99, 'Parent Co'], 'child_ids' => []],
+        ]),
+        $this->jsonRpcResult([ // Eager loader fetch for parent_id=99
+            (object) ['id' => 99, 'name' => 'Parent Co', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => [1, 2]],
+        ])
+    ]);
+
+    $paginator = TestPartner::query()->with('parent')->paginate(2);
+
+    expect($paginator)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+        ->and($paginator->items()[0]->parent)->toBeInstanceOf(TestPartner::class)
+        ->and($paginator->items()[0]->parent->name)->toBe('Parent Co')
+        // Eager loader prevents a second fetch for Child B's parent
+        ->and($paginator->items()[1]->parent)->toBeInstanceOf(TestPartner::class)
+        ->and($paginator->items()[1]->parent->name)->toBe('Parent Co');
+});
+
+test('chunk loops over paginated hydrated models with eager loading', function () use ($bindOdoo) {
+    $bindOdoo->call($this, [
+        // Page 1
+        $this->jsonRpcResult([
+            (object) ['id' => 1, 'name' => 'A', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => []],
+            (object) ['id' => 2, 'name' => 'B', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => []],
+        ]),
+        // Eager load for Page 1
+        // (with('parent') will not trigger another call because parent_id is false, so 0 eager loads)
+        
+        // Page 2
+        $this->jsonRpcResult([
+            (object) ['id' => 3, 'name' => 'C', 'email' => null, 'active' => true, 'parent_id' => [99, 'Parent Co'], 'child_ids' => []],
+        ]),
+        // Eager load for Page 2
+        $this->jsonRpcResult([
+            (object) ['id' => 99, 'name' => 'Parent Co', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => []],
+        ]),
+        
+        // Page 3
+        $this->jsonRpcResult([]),
+    ]);
+
+    $iterations = 0;
+    $result = TestPartner::query()->with('parent')->chunk(2, function ($results, $page) use (&$iterations) {
+        $iterations++;
+        
+        if ($page === 1) {
+            expect($results)->toHaveCount(2)
+                ->and($results[0])->toBeInstanceOf(TestPartner::class)
+                ->and($results[0]->name)->toBe('A');
+        } elseif ($page === 2) {
+            expect($results)->toHaveCount(1)
+                ->and($results[0]->parent)->toBeInstanceOf(TestPartner::class)
+                ->and($results[0]->parent->name)->toBe('Parent Co');
+        }
+    });
+
+    expect($result)->toBeTrue()
+        ->and($iterations)->toBe(2);
+});
+
 test('belongs to resolves a related model eagerly', function () use ($bindOdoo) {
     $bindOdoo->call($this, [
         // First read(): the child partner, with a parent_id tuple

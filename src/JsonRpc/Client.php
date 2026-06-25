@@ -105,21 +105,66 @@ class Client
             ],
         ];
 
-        try {
-            $response = $this->httpClient->post('jsonrpc', [
-                'json' => $payload,
-            ]);
-        } catch (GuzzleException $e) {
-            throw new ConnectionException(
-                "Failed to connect to Odoo: {$e->getMessage()}",
-                (int) $e->getCode(),
-                $e,
-            );
+        $maxRetries = 3;
+        $attempt = 0;
+
+        while (true) {
+            $attempt++;
+
+            try {
+                try {
+                    $response = $this->httpClient->post('jsonrpc', [
+                        'json' => $payload,
+                    ]);
+                } catch (GuzzleException $e) {
+                    throw new ConnectionException(
+                        "Failed to connect to Odoo: {$e->getMessage()}",
+                        (int) $e->getCode(),
+                        $e,
+                    );
+                }
+
+                $this->lastResponse = $response;
+
+                return $this->parseResponse($response);
+            } catch (\Throwable $e) {
+                if ($attempt > $maxRetries || ! $this->shouldRetry($e)) {
+                    throw $e;
+                }
+
+                // Sleep with simple exponential backoff: 200ms, 400ms, 800ms
+                usleep((int) (200000 * (2 ** ($attempt - 1))));
+            }
+        }
+    }
+
+    private function shouldRetry(\Throwable $e): bool
+    {
+        if ($e instanceof ConnectionException) {
+            $message = strtolower($e->getMessage());
+
+            if (str_contains($message, 'timeout') || str_contains($message, 'connection refused') || str_contains($message, 'curl error 28')) {
+                return true;
+            }
+
+            $code = $e->getCode();
+            if (in_array($code, [502, 503, 504], true)) {
+                return true;
+            }
         }
 
-        $this->lastResponse = $response;
+        if ($e instanceof OdooException) {
+            $message = strtolower($e->getMessage());
+            $debug = strtolower((string) ($e->getFaultData()['debug'] ?? ''));
 
-        return $this->parseResponse($response);
+            return str_contains($message, 'concurrent update') 
+                || str_contains($debug, 'concurrent update')
+                || str_contains($debug, 'serializationfailure')
+                || str_contains($message, 'deadlock detected')
+                || str_contains($debug, 'deadlock detected');
+        }
+
+        return false;
     }
 
     public function lastResponse(): ?ResponseInterface

@@ -102,7 +102,8 @@ test('it throws a connection exception on malformed json', function () {
 
 test('it throws a connection exception on non 200 with no error envelope', function () {
     $httpClient = $this->mockHttpClient([
-        new Response(503, [], json_encode(['jsonrpc' => '2.0', 'id' => 1])),
+        // Use 400 so it doesn't trigger retry logic (which retries 502/503/504)
+        new Response(400, [], json_encode(['jsonrpc' => '2.0', 'id' => 1])),
     ]);
 
     $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
@@ -142,4 +143,52 @@ test('it parses ValidationError into ValidationException', function () {
 
     expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
         ->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class);
+});
+
+test('it retries on a concurrent update exception and succeeds', function () {
+    $httpClient = $this->mockHttpClient([
+        $this->jsonRpcError('Odoo Server Error', 200, [
+            'name' => 'odoo.exceptions.UserError',
+            'message' => 'A concurrent update has occurred',
+            'debug' => 'serializationfailure'
+        ]),
+        $this->jsonRpcResult(['id' => 1, 'name' => 'Test Partner']),
+    ]);
+
+    $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
+
+    $result = $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'write', [[1]]);
+
+    expect($result)->toBe(['id' => 1, 'name' => 'Test Partner']);
+});
+
+test('it exhausts max retries and throws the original exception', function () {
+    $httpClient = $this->mockHttpClient([
+        new Response(503, [], json_encode(['jsonrpc' => '2.0', 'id' => 1])),
+        new Response(503, [], json_encode(['jsonrpc' => '2.0', 'id' => 1])),
+        new Response(503, [], json_encode(['jsonrpc' => '2.0', 'id' => 1])),
+        new Response(503, [], json_encode(['jsonrpc' => '2.0', 'id' => 1])),
+    ]);
+
+    $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
+
+    expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
+        ->toThrow(ConnectionException::class, 'Failed to connect to Odoo');
+});
+
+test('it does not retry validation errors', function () {
+    $httpClient = $this->mockHttpClient([
+        $this->jsonRpcError('Odoo Server Error', 200, [
+            'name' => 'odoo.exceptions.ValidationError',
+            'message' => 'Invalid email address',
+        ]),
+        // If it retries, it would consume this second response.
+        // We want to ensure it throws immediately without retrying.
+        $this->jsonRpcResult(['id' => 1]), 
+    ]);
+
+    $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
+
+    expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'write', [[1]]))
+        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class, 'Invalid email address');
 });

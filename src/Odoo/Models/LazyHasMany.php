@@ -55,6 +55,25 @@ final class LazyHasMany implements ArrayAccess, Countable, Iterator
         return $this;
     }
 
+    /**
+     * @internal For eager loading
+     * @return int[]
+     */
+    public function getIds(): array
+    {
+        return $this->ids;
+    }
+
+    /**
+     * @internal For eager loading
+     * @param T[] $items
+     */
+    public function setLoadedItems(array $items): void
+    {
+        $this->items = array_values($items);
+        $this->loaded = true;
+    }
+
     private function ensureLoaded(): void
     {
         if ($this->loaded) {

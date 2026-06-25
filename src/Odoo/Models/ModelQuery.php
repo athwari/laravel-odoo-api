@@ -2,6 +2,7 @@
 
 namespace Athwari\LaravelOdooApi\Odoo\Models;
 
+use Athwari\LaravelOdooApi\Exceptions\ConfigurationException;
 use Athwari\LaravelOdooApi\Odoo\OdooModel;
 use Athwari\LaravelOdooApi\Odoo\Request\RequestBuilder;
 
@@ -10,54 +11,35 @@ use Athwari\LaravelOdooApi\Odoo\Request\RequestBuilder;
  * OdooModel instances instead of raw stdClass objects.
  *
  * @template T of OdooModel
+ * @mixin RequestBuilder
  */
 final class ModelQuery
 {
+    /** @var array<string> */
+    private array $with = [];
+
     public function __construct(
         private readonly OdooModel $prototype,
         private readonly RequestBuilder $builder,
     ) {}
 
-    public function where(string $field, string $operator, mixed $value): static
+    public function with(string|array $relations): static
     {
-        $this->builder->where($field, $operator, $value);
+        $relations = is_string($relations) ? func_get_args() : $relations;
+        $this->with = array_merge($this->with, $relations);
 
         return $this;
     }
 
-    public function orWhere(string $field, string $operator, mixed $value): static
+    public function __call(string $method, array $parameters): mixed
     {
-        $this->builder->orWhere($field, $operator, $value);
+        $result = $this->builder->$method(...$parameters);
 
-        return $this;
-    }
+        if ($result === $this->builder) {
+            return $this;
+        }
 
-    public function orderBy(string $field, string $direction = 'asc'): static
-    {
-        $this->builder->orderBy($field, $direction);
-
-        return $this;
-    }
-
-    public function limit(?int $limit): static
-    {
-        $this->builder->limit($limit);
-
-        return $this;
-    }
-
-    public function offset(int $offset): static
-    {
-        $this->builder->offset($offset);
-
-        return $this;
-    }
-
-    public function fields(array $fields): static
-    {
-        $this->builder->fields($fields);
-
-        return $this;
+        return $result;
     }
 
     /**
@@ -65,10 +47,72 @@ final class ModelQuery
      */
     public function get(): array
     {
-        return array_map(
+        $models = array_map(
             $this->prototype::hydrate(...),
             $this->builder->get(),
         );
+
+        if ($this->with !== []) {
+            EagerLoader::load($models, $this->with);
+        }
+
+        return $models;
+    }
+
+    /**
+     * Get the results as a paginator.
+     *
+     * @param int $perPage
+     * @param string $pageName
+     * @param int|null $page
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     * @throws ConfigurationException
+     */
+    public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        if (! class_exists(\Illuminate\Pagination\LengthAwarePaginator::class)) {
+            throw new ConfigurationException('Pagination requires the illuminate/pagination package.');
+        }
+
+        $page = $page ?: \Illuminate\Pagination\Paginator::resolveCurrentPage($pageName);
+        $total = $this->builder->count();
+        
+        $models = $total ? $this->offset(($page - 1) * $perPage)->limit($perPage)->get() : [];
+
+        return new \Illuminate\Pagination\LengthAwarePaginator(collect($models), $total, $perPage, $page, [
+            'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
+        ]);
+    }
+
+    /**
+     * Chunk the results of the query.
+     *
+     * @param int $count
+     * @param callable(\Illuminate\Support\Collection<int, T>, int): (bool|void) $callback
+     * @return bool
+     */
+    public function chunk(int $count, callable $callback): bool
+    {
+        $page = 1;
+
+        do {
+            $results = $this->offset(($page - 1) * $count)->limit($count)->get();
+
+            $countResults = count($results);
+
+            if ($countResults == 0) {
+                break;
+            }
+
+            if ($callback(collect($results), $page) === false) {
+                return false;
+            }
+
+            $page++;
+        } while ($countResults == $count);
+
+        return true;
     }
 
     /**
@@ -81,16 +125,5 @@ final class ModelQuery
         return $items[0] ?? null;
     }
 
-    public function count(): int
-    {
-        return $this->builder->count();
-    }
 
-    /**
-     * @return int[]
-     */
-    public function ids(): array
-    {
-        return $this->builder->ids();
-    }
 }

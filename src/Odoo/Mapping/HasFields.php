@@ -113,14 +113,12 @@ trait HasFields
     }
 
     /**
-     * Resolve a #[BelongsTo] relation eagerly at hydration time: the
+     * Resolve a #[BelongsTo] relation at hydration time: the
      * field value is the [id, display_name] tuple Odoo returns for a
-     * many2one field, so the ID half is fetched as the related model.
-     *
-     * This is intentionally eager (not lazy like HasMany) since
-     * many2one relations are a single record and far cheaper to
-     * resolve up front; the property is still nullable for an unset
-     * relation.
+     * many2one field. We no longer eagerly fetch the related model
+     * here (to avoid N+1 queries). Instead, the property is left
+     * uninitialized and will be lazy-loaded via __get() when accessed,
+     * or bulk-loaded via eager loading (with()).
      */
     protected static function hydrateBelongsTo(ReflectionProperty $property, object $response, object $instance): void
     {
@@ -147,22 +145,10 @@ trait HasFields
             return;
         }
 
-        if (self::$belongsToDepth >= self::$maxBelongsToDepth) {
-            // Recursion depth guard tripped: leave unresolved rather than
-            // continuing to cascade RPC calls. See $belongsToDepth doc.
-            $instance->{$property->name} = null;
-
-            return;
-        }
-
-        $relatedClass = $belongsTo->class;
-
-        self::$belongsToDepth++;
-
-        try {
-            $instance->{$property->name} = $relatedClass::find((int) $raw[0]);
-        } finally {
-            self::$belongsToDepth--;
+        // We do NOT eagerly call find() here anymore.
+        // It will be lazy-loaded by OdooModel::__get() or bulk loaded by EagerLoader.
+        if (method_exists($instance, 'setRelationId')) {
+            $instance->setRelationId($property->name, (int) $raw[0]);
         }
     }
 

@@ -15,6 +15,7 @@ This package is a clean rebuild and continuation of `icons/laravel-odoo-api`. Wh
 
 ### Medium Impact Changes
 
+- **BelongsTo Eager Loading Default**: `#[BelongsTo]` properties are no longer eagerly loaded by default during hydration to eliminate N+1 queries. If you access the property, it will transparently lazy-load the record. However, if you serialize or `var_dump` the model *before* accessing the relation, the property will appear uninitialized. If you need the relation loaded upfront, use the new `->with('relation')` method on the query builder.
 - **Unscoped Update/Delete Guard**: Calling `update()` or `delete()` on a `RequestBuilder` without a `where()` condition will now throw a `ValidationException` to prevent accidental mass updates/deletions. If you genuinely need an unscoped operation, call the endpoint's `write()` or `unlink()` directly.
 - **Strict Input Validation**: `create()` and `write()` now throw a `ValidationException` on empty data.
 

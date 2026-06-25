@@ -112,6 +112,21 @@ class OdooModel
         $this->initializeRelations();
     }
 
+    /** @var array<string, int> */
+    private array $relationIds = [];
+
+    /** @internal */
+    public function setRelationId(string $property, int $id): void
+    {
+        $this->relationIds[$property] = $id;
+    }
+
+    /** @internal */
+    public function getRelationId(string $property): ?int
+    {
+        return $this->relationIds[$property] ?? null;
+    }
+
     public function __get(string $name): mixed
     {
         $reflectionClass = new ReflectionClass($this);
@@ -127,16 +142,18 @@ class OdooModel
         if (! empty($belongsToAttributes)) {
             $belongsTo = $belongsToAttributes[0]->newInstance();
 
-            $fkValue = null;
-            foreach ($reflectionClass->getProperties() as $prop) {
-                $fieldAttributes = $prop->getAttributes(Field::class);
-                if (! empty($fieldAttributes)) {
-                    $fieldAttr = $fieldAttributes[0]->newInstance();
-                    if (($fieldAttr->name ?? $prop->name) === $belongsTo->name) {
-                        if ($prop->isInitialized($this)) {
-                            $fkValue = $this->{$prop->name};
+            $fkValue = $this->getRelationId($name);
+            if ($fkValue === null) {
+                foreach ($reflectionClass->getProperties() as $prop) {
+                    $fieldAttributes = $prop->getAttributes(Field::class);
+                    if (! empty($fieldAttributes)) {
+                        $fieldAttr = $fieldAttributes[0]->newInstance();
+                        if (($fieldAttr->name ?? $prop->name) === $belongsTo->name) {
+                            if ($prop->isInitialized($this)) {
+                                $fkValue = $this->{$prop->name};
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
