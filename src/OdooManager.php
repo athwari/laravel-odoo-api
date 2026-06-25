@@ -4,6 +4,7 @@ namespace Athwari\LaravelOdooApi;
 
 use Athwari\LaravelOdooApi\Odoo\Config;
 use Athwari\LaravelOdooApi\Odoo\Context;
+use Athwari\LaravelOdooApi\Testing\OdooFake;
 use Illuminate\Contracts\Foundation\Application;
 use InvalidArgumentException;
 
@@ -23,9 +24,22 @@ class OdooManager
      */
     protected $connections = [];
 
+    /**
+     * The fake client instance, if any.
+     */
+    protected ?OdooFake $fake = null;
+
     public function __construct(Application $app)
     {
         $this->app = $app;
+    }
+
+    /**
+     * Replace the underlying transport with a test double.
+     */
+    public function fake(): OdooFake
+    {
+        return $this->fake = new OdooFake();
     }
 
     /**
@@ -70,7 +84,14 @@ class OdooManager
             companyId: isset($contextConfig['company_id']) ? (int) $contextConfig['company_id'] : null,
         );
 
-        return new Odoo($odooConfig, $context);
+        $odoo = new Odoo($odooConfig, $context);
+
+        if ($this->fake) {
+            $odoo->getCommonEndpoint()->setClient($this->fake);
+            $odoo->setFakeClient($this->fake);
+        }
+
+        return $odoo;
     }
 
     /**

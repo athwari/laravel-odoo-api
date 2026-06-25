@@ -12,6 +12,7 @@ use Athwari\LaravelOdooApi\Odoo\Request\Arguments\Domain;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\Options;
 use Athwari\LaravelOdooApi\Odoo\Request\Request;
 use Athwari\LaravelOdooApi\Odoo\Request\RequestBuilder;
+use Athwari\LaravelOdooApi\Testing\OdooFake;
 
 /**
  * Main entry point for talking to an Odoo instance over JSON-RPC.
@@ -29,6 +30,8 @@ class Odoo
 
     private ?int $uid = null;
 
+    private ?OdooFake $fakeClient = null;
+
     public function __construct(
         private readonly Config $config,
         private Context $context = new Context(),
@@ -39,6 +42,22 @@ class Odoo
     public function getConfig(): Config
     {
         return $this->config;
+    }
+
+    public function getCommonEndpoint(): CommonEndpoint
+    {
+        return $this->common;
+    }
+
+    public function setFakeClient(OdooFake $fake): static
+    {
+        $this->fakeClient = $fake;
+
+        if ($this->object) {
+            $this->object->setClient($fake);
+        }
+
+        return $this;
     }
 
     public function getContext(): Context
@@ -70,6 +89,10 @@ class Odoo
         $this->uid = $this->common->authenticate();
         $this->object = new ObjectEndpoint($this->config, $this->context, $this->uid);
 
+        if ($this->fakeClient) {
+            $this->object->setClient($this->fakeClient);
+        }
+
         return $this;
     }
 
@@ -100,6 +123,20 @@ class Odoo
     public function version(): Version
     {
         return $this->common->version();
+    }
+
+    /**
+     * Check if the connected Odoo instance supports a specific feature.
+     */
+    public function supports(string $feature): bool
+    {
+        $majorVersion = $this->version()->serverVersionInfo[0] ?? 0;
+
+        return match ($feature) {
+            'jsonrpc_context' => $majorVersion >= 15,
+            'read_group_groupby' => $majorVersion >= 12,
+            default => false,
+        };
     }
 
     private function object(): ObjectEndpoint

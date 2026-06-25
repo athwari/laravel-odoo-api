@@ -28,6 +28,8 @@ class RequestBuilder
     use HasOptions;
     use HasOrder;
 
+    protected ?string $dtoClass = null;
+
     public function __construct(
         private readonly ObjectEndpoint $endpoint,
         protected string $model,
@@ -38,6 +40,18 @@ class RequestBuilder
         $this->options = $options ?? new Options();
     }
 
+    public function as(string $className): static
+    {
+        $this->dtoClass = $className;
+
+        return $this;
+    }
+
+    public function getDtoClass(): ?string
+    {
+        return $this->dtoClass;
+    }
+
     public function can(string $permission): bool
     {
         return $this->endpoint->checkAccessRights($this->model, $permission, $this->options);
@@ -46,14 +60,34 @@ class RequestBuilder
     public function get(): array
     {
         if ($this->cacheTtl !== null) {
-            return Cache::remember(
+            $result = Cache::remember(
                 $this->generateCacheKey('get'),
                 $this->cacheTtl,
                 fn () => $this->executeGet()
             );
+        } else {
+            $result = $this->executeGet();
         }
 
-        return $this->executeGet();
+        return $this->mapToDto($result);
+    }
+
+    private function mapToDto(array $result): array
+    {
+        if (! $this->dtoClass) {
+            return $result;
+        }
+
+        $dtoClass = $this->dtoClass;
+        $hasFromArray = method_exists($dtoClass, 'fromArray');
+
+        return array_map(function ($record) use ($dtoClass, $hasFromArray) {
+            if ($hasFromArray) {
+                return $dtoClass::fromArray((array) $record);
+            }
+
+            return new $dtoClass((array) $record);
+        }, $result);
     }
 
     private function executeGet(): array

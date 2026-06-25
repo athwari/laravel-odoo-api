@@ -46,13 +46,19 @@ final class ModelQuery
     }
 
     /**
-     * @return T[]
+     * @return T[]|array
      */
     public function get(): array
     {
+        $records = $this->builder->get();
+
+        if ($this->builder->getDtoClass()) {
+            return $records;
+        }
+
         $models = array_map(
             $this->prototype::hydrate(...),
-            $this->builder->get(),
+            $records,
         );
 
         if ($this->with !== []) {
@@ -113,9 +119,9 @@ final class ModelQuery
     }
 
     /**
-     * @return T|null
+     * @return T|mixed|null
      */
-    public function first(): ?OdooModel
+    public function first(): mixed
     {
         $items = $this->limit(1)->get();
 

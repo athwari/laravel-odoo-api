@@ -2,6 +2,7 @@
 
 namespace Athwari\LaravelOdooApi\JsonRpc;
 
+use Athwari\LaravelOdooApi\Contracts\OdooClientInterface;
 use Athwari\LaravelOdooApi\Exceptions\AccessDeniedException;
 use Athwari\LaravelOdooApi\Exceptions\ConnectionException;
 use Athwari\LaravelOdooApi\Exceptions\OdooException;
@@ -35,7 +36,7 @@ use Psr\Http\Message\ResponseInterface;
  * @method mixed version()
  * @method mixed execute_kw(string $db, int $uid, string $password, string $model, string $method, array $args = [], array $options = [])
  */
-class Client
+class Client implements OdooClientInterface
 {
     private const DEBUG_TRUNCATE_LENGTH = 500;
 
@@ -93,6 +94,29 @@ class Client
      * @throws OdooException On a JSON-RPC error envelope from Odoo
      */
     public function __call(string $method, array $arguments): mixed
+    {
+        return $this->callRpc($method, $arguments);
+    }
+
+    public function authenticate(string $db, string $username, string $password, array $options = []): int
+    {
+        return $this->callRpc('authenticate', [$db, $username, $password, $options]);
+    }
+
+    public function version(): array
+    {
+        return (array) $this->callRpc('version', []);
+    }
+
+    public function execute_kw(string $db, int $uid, string $password, string $model, string $method, array $args = [], array $options = []): mixed
+    {
+        return $this->callRpc('execute_kw', [$db, $uid, $password, $model, $method, $args, $options]);
+    }
+
+    /**
+     * Executes the actual JSON-RPC payload building and network call.
+     */
+    private function callRpc(string $method, array $arguments): mixed
     {
         $payload = [
             'jsonrpc' => '2.0',

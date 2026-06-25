@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool write(string $model, array $ids, array $values)
  * @method static bool unlink(string $model, array $ids)
  * @method static \Athwari\LaravelOdooApi\Odoo connection(?string $name = null)
+ * @method static \Athwari\LaravelOdooApi\Testing\OdooFake fake()
  *
  * @see \Athwari\LaravelOdooApi\OdooManager
  * @see \Athwari\LaravelOdooApi\Odoo

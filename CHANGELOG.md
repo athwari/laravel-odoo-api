@@ -14,11 +14,18 @@
 - Added `createMany([])` and `writeMany([])` methods to `RequestBuilder` for batch insert and grouping-optimized update operations.
 - Added automatic retry middleware to `JsonRpcClient` for network timeouts, 502/503/504 errors, and Odoo PostgreSQL concurrent update / deadlock exceptions.
 - Added `OdooRecordCreated`, `OdooRecordUpdated`, and `OdooRecordDeleted` events dispatched automatically during `OdooModel::save()` and `OdooModel::delete()`.
-- Added `odoo:ping` Artisan command to verify connection and authentication to the Odoo server.
-- Added `odoo:fields {model}` Artisan command to discover and debug Odoo model schemas from the CLI.
-- Added `odoo:check-config` Artisan command to validate local Odoo configuration offline.
-- Added named multi-connection support via `OdooManager`, allowing connection to multiple Odoo servers/databases using `Odoo::connection('name')` or `protected string $connection = 'name';` on `OdooModel` instances while maintaining strict backward compatibility.
-- Added fluent `->cache(ttl)` method to the query builder to cache `get()` and `count()` query results via Laravel's Cache facade with deterministic cache keys and multi-connection isolation.
+- Phase 4 Architecture Modernisation
+  - `OdooClientInterface` to abstract the underlying JSON-RPC transport.
+  - `Odoo::fake()` and `OdooFake` class for native testing and mocking support using explicit methods.
+  - `->as(DTO::class)` builder method to natively map query results to custom Data Transfer Objects (DTOs), supporting static `fromArray` factories and constructors.
+  - `$odoo->version()` and `$odoo->supports('feature')` helpers to perform feature-flagging without hard version rejections.
+- Complete PHPDoc annotations for Facade, Builder, and endpoints.
+- `php artisan odoo:ping` command to test configuration and authentication
+- `php artisan odoo:fields {model}` command to inspect model schemas
+- `php artisan odoo:check-config` command to validate connection parameters
+- Named multi-connection support via `OdooManager` (`Odoo::connection('erp')->model(...)`)
+- Read query caching via `->cache(ttl)` on `RequestBuilder`
+- `OdooRecordCreated`, `OdooRecordUpdated`, and `OdooRecordDeleted` eloquent-style events
 
 ### Changed
 

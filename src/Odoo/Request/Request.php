@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Athwari\LaravelOdooApi\Odoo\Request;
 
-use Athwari\LaravelOdooApi\JsonRpc\Client;
+use Athwari\LaravelOdooApi\Contracts\OdooClientInterface;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\Options;
 
 abstract class Request
@@ -17,7 +17,7 @@ abstract class Request
     abstract public function toArray(): array;
 
     public function execute(
-        Client $client,
+        OdooClientInterface $client,
         string $database,
         int $uid,
         string $credential,

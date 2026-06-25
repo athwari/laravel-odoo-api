@@ -31,7 +31,7 @@ class CommonEndpoint extends Endpoint
             ['empty' => 'false'],
         );
 
-        if (is_int($uid) && $uid > 0) {
+        if ($uid > 0) {
             return $uid;
         }
 
