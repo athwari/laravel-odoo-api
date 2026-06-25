@@ -13,12 +13,19 @@
 - Added `chunk()` method to `RequestBuilder` and `ModelQuery` for memory-efficient iteration over large Odoo datasets.
 - Added `createMany([])` and `writeMany([])` methods to `RequestBuilder` for batch insert and grouping-optimized update operations.
 - Added automatic retry middleware to `JsonRpcClient` for network timeouts, 502/503/504 errors, and Odoo PostgreSQL concurrent update / deadlock exceptions.
+- Added `OdooRecordCreated`, `OdooRecordUpdated`, and `OdooRecordDeleted` events dispatched automatically during `OdooModel::save()` and `OdooModel::delete()`.
+- Added `odoo:ping` Artisan command to verify connection and authentication to the Odoo server.
+- Added `odoo:fields {model}` Artisan command to discover and debug Odoo model schemas from the CLI.
+- Added `odoo:check-config` Artisan command to validate local Odoo configuration offline.
+- Added named multi-connection support via `OdooManager`, allowing connection to multiple Odoo servers/databases using `Odoo::connection('name')` or `protected string $connection = 'name';` on `OdooModel` instances while maintaining strict backward compatibility.
+- Added fluent `->cache(ttl)` method to the query builder to cache `get()` and `count()` query results via Laravel's Cache facade with deterministic cache keys and multi-connection isolation.
 
 ### Changed
 
 - **Performance**: `#[BelongsTo]` relations are no longer eagerly hydrated one-by-one (which caused N+1 queries by default). They remain uninitialized and will transparently lazy-load via `__get()` upon first access, unless explicitly eager-loaded via `->with()`.
 - Sanitised Odoo exception tracebacks by removing them from the exception message to prevent log spam, while keeping them truncated in the exception's fault data.
 - Added explicit `@return \Illuminate\Support\Collection` PHPDoc type hint to `RequestBuilder::collect()` to improve static analysis and IDE autocomplete.
+- **Fixed**: `Options` object state mutation bug during JSON-RPC execution, making `withContext()` immutable to ensure proper cache key generation during multiple chained builder methods (like `paginate`).
 
 ## 1.0.0 — Initial release
 

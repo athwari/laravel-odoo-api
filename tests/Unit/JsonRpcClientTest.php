@@ -150,7 +150,7 @@ test('it retries on a concurrent update exception and succeeds', function () {
         $this->jsonRpcError('Odoo Server Error', 200, [
             'name' => 'odoo.exceptions.UserError',
             'message' => 'A concurrent update has occurred',
-            'debug' => 'serializationfailure'
+            'debug' => 'serializationfailure',
         ]),
         $this->jsonRpcResult(['id' => 1, 'name' => 'Test Partner']),
     ]);
@@ -184,7 +184,7 @@ test('it does not retry validation errors', function () {
         ]),
         // If it retries, it would consume this second response.
         // We want to ensure it throws immediately without retrying.
-        $this->jsonRpcResult(['id' => 1]), 
+        $this->jsonRpcResult(['id' => 1]),
     ]);
 
     $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);

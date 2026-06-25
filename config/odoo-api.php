@@ -76,5 +76,43 @@ return [
         'timezone' => env('ODOO_TIMEZONE'),
         'company_id' => env('ODOO_COMPANY_ID'),
     ],
+    /*
+    |--------------------------------------------------------------------------
+    | Default Connection Name
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify which of the connections below you wish
+    | to use as your default connection for all Odoo work.
+    |
+    */
+
+    'default' => env('ODOO_CONNECTION', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Odoo Connections
+    |--------------------------------------------------------------------------
+    |
+    | Here are each of the Odoo connections setup for your application.
+    |
+    */
+
+    'connections' => [
+        'default' => [
+            'database' => env('ODOO_DATABASE'),
+            'host' => env('ODOO_HOST'),
+            'username' => env('ODOO_USERNAME'),
+            'password' => env('ODOO_PASSWORD'),
+            'api_key' => env('ODOO_API_KEY'),
+            'fixed_user_id' => env('ODOO_FIXED_USER_ID'),
+            'timeout' => env('ODOO_TIMEOUT', 30),
+            'ssl_verify' => env('ODOO_SSL_VERIFY', true),
+            'context' => [
+                'lang' => env('ODOO_LANG'),
+                'timezone' => env('ODOO_TIMEZONE'),
+                'company_id' => env('ODOO_COMPANY_ID'),
+            ],
+        ],
+    ],
 
 ];

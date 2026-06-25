@@ -11,8 +11,8 @@ use ReflectionProperty;
 class EagerLoader
 {
     /**
-     * @param OdooModel[] $models
-     * @param array<string> $relations
+     * @param  OdooModel[]  $models
+     * @param  array<string>  $relations
      */
     public static function load(array $models, array $relations): void
     {
@@ -28,7 +28,7 @@ class EagerLoader
     }
 
     /**
-     * @param array<string> $relations
+     * @param  array<string>  $relations
      * @return array<string, array<string>>
      */
     private static function parseRelations(array $relations): array
@@ -51,7 +51,7 @@ class EagerLoader
     }
 
     /**
-     * @param OdooModel[] $models
+     * @param  OdooModel[]  $models
      */
     private static function loadRelation(array $models, string $relation, array $nestedRelations): void
     {
@@ -72,7 +72,7 @@ class EagerLoader
     }
 
     /**
-     * @param OdooModel[] $models
+     * @param  OdooModel[]  $models
      */
     private static function loadBelongsTo(array $models, ReflectionProperty $property, string $relation, array $nestedRelations): void
     {
@@ -113,7 +113,7 @@ class EagerLoader
     }
 
     /**
-     * @param OdooModel[] $models
+     * @param  OdooModel[]  $models
      */
     private static function loadHasMany(array $models, ReflectionProperty $property, string $relation, array $nestedRelations): void
     {
@@ -139,6 +139,7 @@ class EagerLoader
                     $lazyCollection->setLoadedItems([]);
                 }
             }
+
             return;
         }
 

@@ -6,6 +6,7 @@ use Athwari\LaravelOdooApi\Exceptions\ConfigurationException;
 use Athwari\LaravelOdooApi\Exceptions\ValidationException;
 use Athwari\LaravelOdooApi\Odoo\Endpoint\ObjectEndpoint;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\Domain;
+use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasCache;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasDomain;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasFields;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasGroupBy;
@@ -14,9 +15,11 @@ use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasOffset;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasOptions;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasOrder;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\Options;
+use Illuminate\Support\Facades\Cache;
 
 class RequestBuilder
 {
+    use HasCache;
     use HasDomain;
     use HasFields;
     use HasGroupBy;
@@ -41,6 +44,19 @@ class RequestBuilder
     }
 
     public function get(): array
+    {
+        if ($this->cacheTtl !== null) {
+            return Cache::remember(
+                $this->generateCacheKey('get'),
+                $this->cacheTtl,
+                fn () => $this->executeGet()
+            );
+        }
+
+        return $this->executeGet();
+    }
+
+    private function executeGet(): array
     {
         if ($this->hasGroupBy()) {
             return $this->endpoint->readGroup(
@@ -70,6 +86,7 @@ class RequestBuilder
      * Get the results as a Laravel Collection.
      *
      * @return \Illuminate\Support\Collection<int, \stdClass>
+     *
      * @throws ConfigurationException If Laravel's collect() helper is unavailable
      */
     public function collect(): iterable
@@ -84,10 +101,6 @@ class RequestBuilder
     /**
      * Get the results as a paginator.
      *
-     * @param int $perPage
-     * @param string $pageName
-     * @param int|null $page
-     * @return \Illuminate\Pagination\LengthAwarePaginator
      * @throws ConfigurationException
      */
     public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): \Illuminate\Pagination\LengthAwarePaginator
@@ -109,9 +122,7 @@ class RequestBuilder
     /**
      * Chunk the results of the query.
      *
-     * @param int $count
-     * @param callable(\Illuminate\Support\Collection<int, \stdClass>, int): (bool|void) $callback
-     * @return bool
+     * @param  callable(\Illuminate\Support\Collection<int, \stdClass>, int): (bool|void)  $callback
      */
     public function chunk(int $count, callable $callback): bool
     {
@@ -158,6 +169,19 @@ class RequestBuilder
 
     public function count(): int
     {
+        if ($this->cacheTtl !== null) {
+            return Cache::remember(
+                $this->generateCacheKey('count'),
+                $this->cacheTtl,
+                fn () => $this->executeCount()
+            );
+        }
+
+        return $this->executeCount();
+    }
+
+    private function executeCount(): int
+    {
         return $this->endpoint->count(
             $this->model,
             domain: $this->domain,
@@ -199,8 +223,9 @@ class RequestBuilder
     /**
      * Create multiple records in a single RPC call.
      *
-     * @param array<int, array<string, mixed>> $records
+     * @param  array<int, array<string, mixed>>  $records
      * @return array<int, int> List of created record IDs
+     *
      * @throws ValidationException
      */
     public function createMany(array $records): array
@@ -239,11 +264,11 @@ class RequestBuilder
 
     /**
      * Update multiple records with specific values for each.
-     * 
+     *
      * Groups records with identical values into single RPC calls to optimize network performance.
      *
-     * @param array<int, array{id: int|string, values: array<string, mixed>}> $payloads
-     * @return bool
+     * @param  array<int, array{id: int|string, values: array<string, mixed>}>  $payloads
+     *
      * @throws ValidationException
      */
     public function writeMany(array $payloads): bool

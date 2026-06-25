@@ -12,7 +12,7 @@ use Athwari\LaravelOdooApi\Tests\Models\TestPartner;
 test('with eagerly loads belongs to relations', function () {
     $config = new Config('test_db', 'https://example.odoo.com', 'admin', 'admin');
     $endpoint = new ObjectEndpoint($config, new Context(), 1);
-    
+
     // We expect exactly TWO RPC calls:
     // 1. searchRead to get the initial partners
     // 2. read to bulk-load their parent_ids
@@ -41,7 +41,7 @@ test('with eagerly loads belongs to relations', function () {
     $partners = TestPartner::query()->with('parent')->get();
 
     expect($partners)->toHaveCount(3);
-    
+
     // Parent should be populated without triggering another RPC
     expect($partners[0]->parent->name)->toBe('Parent');
     expect($partners[1]->parent->name)->toBe('Parent');
@@ -51,7 +51,7 @@ test('with eagerly loads belongs to relations', function () {
 test('with eagerly loads has many relations', function () {
     $config = new Config('test_db', 'https://example.odoo.com', 'admin', 'admin');
     $endpoint = new ObjectEndpoint($config, new Context(), 1);
-    
+
     // We expect exactly TWO RPC calls:
     // 1. searchRead to get the parent partners
     // 2. read to bulk-load all their child_ids
@@ -80,11 +80,11 @@ test('with eagerly loads has many relations', function () {
     $partners = TestPartner::query()->with('children')->get();
 
     expect($partners)->toHaveCount(2);
-    
+
     expect($partners[0]->children->isLoaded())->toBeTrue();
     expect($partners[0]->children)->toHaveCount(2);
     expect($partners[0]->children[0]->name)->toBe('Child A');
-    
+
     expect($partners[1]->children->isLoaded())->toBeTrue();
     expect($partners[1]->children)->toHaveCount(1);
     expect($partners[1]->children[0]->name)->toBe('Child C');

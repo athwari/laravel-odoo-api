@@ -11,7 +11,10 @@ use Athwari\LaravelOdooApi\Odoo\Request\RequestBuilder;
  * OdooModel instances instead of raw stdClass objects.
  *
  * @template T of OdooModel
+ *
  * @mixin RequestBuilder
+ *
+ * @method $this cache(\DateTimeInterface|\DateInterval|int $ttl, ?string $key = null)
  */
 final class ModelQuery
 {
@@ -62,10 +65,6 @@ final class ModelQuery
     /**
      * Get the results as a paginator.
      *
-     * @param int $perPage
-     * @param string $pageName
-     * @param int|null $page
-     * @return \Illuminate\Pagination\LengthAwarePaginator
      * @throws ConfigurationException
      */
     public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): \Illuminate\Pagination\LengthAwarePaginator
@@ -76,7 +75,7 @@ final class ModelQuery
 
         $page = $page ?: \Illuminate\Pagination\Paginator::resolveCurrentPage($pageName);
         $total = $this->builder->count();
-        
+
         $models = $total ? $this->offset(($page - 1) * $perPage)->limit($perPage)->get() : [];
 
         return new \Illuminate\Pagination\LengthAwarePaginator(collect($models), $total, $perPage, $page, [
@@ -88,9 +87,7 @@ final class ModelQuery
     /**
      * Chunk the results of the query.
      *
-     * @param int $count
-     * @param callable(\Illuminate\Support\Collection<int, T>, int): (bool|void) $callback
-     * @return bool
+     * @param  callable(\Illuminate\Support\Collection<int, T>, int): (bool|void)  $callback
      */
     public function chunk(int $count, callable $callback): bool
     {
@@ -124,6 +121,4 @@ final class ModelQuery
 
         return $items[0] ?? null;
     }
-
-
 }

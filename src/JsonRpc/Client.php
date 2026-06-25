@@ -157,7 +157,7 @@ class Client
             $message = strtolower($e->getMessage());
             $debug = strtolower((string) ($e->getFaultData()['debug'] ?? ''));
 
-            return str_contains($message, 'concurrent update') 
+            return str_contains($message, 'concurrent update')
                 || str_contains($debug, 'concurrent update')
                 || str_contains($debug, 'serializationfailure')
                 || str_contains($message, 'deadlock detected')
@@ -216,7 +216,7 @@ class Client
 
         if (isset($data['debug'])) {
             // Truncate the debug traceback to prevent memory bloat.
-            // We DO NOT append this to $message to prevent massive log spam 
+            // We DO NOT append this to $message to prevent massive log spam
             // and potential SQL leakage in the host Laravel application's logs.
             $data['debug'] = substr((string) $data['debug'], 0, self::DEBUG_TRUNCATE_LENGTH);
         }

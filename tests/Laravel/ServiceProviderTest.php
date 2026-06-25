@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 test('it logs a warning if essential config is missing on boot', function () {
     Config::set('odoo-api.host', null);
     Config::set('odoo-api.database', null);
-    
+
     Log::shouldReceive('warning')
         ->once()
         ->withArgs(function ($message) {
@@ -25,7 +25,7 @@ test('it does not log a warning if essential config is present', function () {
     Config::set('odoo-api.database', 'test_db');
     Config::set('odoo-api.username', 'admin');
     Config::set('odoo-api.password', 'secret');
-    
+
     Log::shouldReceive('warning')->never();
 
     $provider = new OdooApiServiceProvider(app());
@@ -38,7 +38,7 @@ test('it does not log a warning if api key is used instead of password', functio
     Config::set('odoo-api.username', 'admin');
     Config::set('odoo-api.password', null);
     Config::set('odoo-api.api_key', 'secret_key');
-    
+
     Log::shouldReceive('warning')->never();
 
     $provider = new OdooApiServiceProvider(app());

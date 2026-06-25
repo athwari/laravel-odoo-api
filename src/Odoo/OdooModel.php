@@ -6,6 +6,9 @@ use Athwari\LaravelOdooApi\Attributes\BelongsTo;
 use Athwari\LaravelOdooApi\Attributes\Field;
 use Athwari\LaravelOdooApi\Attributes\HasMany;
 use Athwari\LaravelOdooApi\Attributes\Model;
+use Athwari\LaravelOdooApi\Events\OdooRecordCreated;
+use Athwari\LaravelOdooApi\Events\OdooRecordDeleted;
+use Athwari\LaravelOdooApi\Events\OdooRecordUpdated;
 use Athwari\LaravelOdooApi\Exceptions\ConfigurationException;
 use Athwari\LaravelOdooApi\Exceptions\OdooModelException;
 use Athwari\LaravelOdooApi\Exceptions\UndefinedPropertyException;
@@ -15,6 +18,10 @@ use Athwari\LaravelOdooApi\Odoo\Models\LazyHasMany;
 use Athwari\LaravelOdooApi\Odoo\Models\ModelQuery;
 use ReflectionClass;
 
+/**
+ * @method static \Athwari\LaravelOdooApi\Odoo\Models\ModelQuery orWhere(string $field, string $operator, mixed $value = null)
+ * @method static \Athwari\LaravelOdooApi\Odoo\Models\ModelQuery whereNot(string $field, string $operator, mixed $value = null)
+ */
 class OdooModel
 {
     use HasFields;
@@ -33,6 +40,18 @@ class OdooModel
     private static array $bindings = [];
 
     /**
+     * The connection name for the model.
+     */
+    protected string $connection = 'default';
+
+    /**
+     * The connection resolver instance.
+     *
+     * @var \Athwari\LaravelOdooApi\OdooManager|null
+     */
+    protected static $resolver;
+
+    /**
      * Bind an Odoo client for this model class (and, by default, every
      * OdooModel subclass that doesn't have its own explicit binding).
      *
@@ -43,15 +62,68 @@ class OdooModel
         self::$bindings[static::class] = $odoo;
     }
 
-    private static function odoo(): Odoo
+    /**
+     * Set the connection resolver instance.
+     */
+    public static function setConnectionResolver($resolver): void
     {
+        static::$resolver = $resolver;
+    }
+
+    /**
+     * Get the connection resolver instance.
+     */
+    public static function getConnectionResolver()
+    {
+        return static::$resolver;
+    }
+
+    /**
+     * Get the current connection name for the model.
+     */
+    public function getConnectionName(): string
+    {
+        return $this->connection;
+    }
+
+    /**
+     * Set the connection name for the model.
+     */
+    public function setConnection(string $name): static
+    {
+        $this->connection = $name;
+
+        return $this;
+    }
+
+    /**
+     * Get the Odoo connection instance.
+     */
+    private static function odoo(?self $instance = null): Odoo
+    {
+        $connection = $instance ? $instance->getConnectionName() : self::defaultConnectionName();
+
+        if (static::$resolver) {
+            return static::$resolver->connection($connection);
+        }
+
+        // Fallback to legacy bindings
         return self::$bindings[static::class]
             ?? self::$bindings[self::class]
             ?? throw new ConfigurationException(
-                static::class.' has no bound Odoo client. Call OdooModel::boot($odoo) first '
-                .'(typically from a service provider), or '
-                .static::class.'::boot($odoo) to bind this model class specifically.'
+                static::class.' has no bound Odoo client. Call OdooModel::boot($odoo) or setConnectionResolver() first.'
             );
+    }
+
+    /**
+     * Resolve the model's declared default connection without instantiating the class.
+     */
+    private static function defaultConnectionName(): string
+    {
+        $defaults = (new ReflectionClass(static::class))->getDefaultProperties();
+        $connection = $defaults['connection'] ?? 'default';
+
+        return is_string($connection) ? $connection : 'default';
     }
 
     public static function listFields(?array $fields = null): object
@@ -217,22 +289,54 @@ class OdooModel
     public function save(): static
     {
         if ($this->exists()) {
-            $updateResponse = self::odoo()->write(static::model(), [$this->id], (array) static::dehydrate($this));
+            $updateResponse = self::odoo($this)->write(static::model(), [$this->id], (array) static::dehydrate($this));
 
             if ($updateResponse === false) {
                 throw new OdooModelException('Failed to update '.static::class." (id={$this->id}).");
             }
+
+            if (function_exists('event')) {
+                event(new OdooRecordUpdated($this));
+            }
         } else {
-            $createResponse = self::odoo()->create(static::model(), (array) static::dehydrate($this));
+            $createResponse = self::odoo($this)->create(static::model(), (array) static::dehydrate($this));
 
             if ($createResponse === false) {
                 throw new OdooModelException('Failed to create '.static::class.'.');
             }
 
             $this->id = $createResponse;
+
+            if (function_exists('event')) {
+                event(new OdooRecordCreated($this));
+            }
         }
 
         return $this;
+    }
+
+    /**
+     * @throws OdooModelException
+     */
+    public function delete(): bool
+    {
+        if (! $this->exists()) {
+            return false;
+        }
+
+        $deleteResponse = self::odoo($this)->unlink(static::model(), [$this->id]);
+
+        if ($deleteResponse === false) {
+            throw new OdooModelException('Failed to delete '.static::class." (id={$this->id}).");
+        }
+
+        if (function_exists('event')) {
+            event(new OdooRecordDeleted($this));
+        }
+
+        $this->id = null;
+
+        return true;
     }
 
     /**
@@ -260,6 +364,10 @@ class OdooModel
         $reflectionClass = new ReflectionClass(static::class);
 
         foreach ($reflectionClass->getProperties() as $property) {
+            if ($property->isStatic()) {
+                continue;
+            }
+
             $thisInitialized = $property->isInitialized($this);
             $otherInitialized = $property->isInitialized($model);
 

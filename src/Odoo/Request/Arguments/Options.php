@@ -27,9 +27,10 @@ class Options
 
     public function withContext(Context $context): static
     {
-        $this->context = $context;
+        $clone = clone $this;
+        $clone->context = $context;
 
-        return $this;
+        return $clone;
     }
 
     public function setRaw(string $key, mixed $value): static

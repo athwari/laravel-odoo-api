@@ -17,13 +17,15 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool|int create(string $model, array $values)
  * @method static bool write(string $model, array $ids, array $values)
  * @method static bool unlink(string $model, array $ids)
+ * @method static \Athwari\LaravelOdooApi\Odoo connection(?string $name = null)
  *
+ * @see \Athwari\LaravelOdooApi\OdooManager
  * @see \Athwari\LaravelOdooApi\Odoo
  */
 class Odoo extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Athwari\LaravelOdooApi\Odoo::class;
+        return \Athwari\LaravelOdooApi\OdooManager::class;
     }
 }

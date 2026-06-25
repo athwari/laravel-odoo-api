@@ -87,7 +87,7 @@ test('paginate preserves with() eager loading and does not N+1', function () use
         ]),
         $this->jsonRpcResult([ // Eager loader fetch for parent_id=99
             (object) ['id' => 99, 'name' => 'Parent Co', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => [1, 2]],
-        ])
+        ]),
     ]);
 
     $paginator = TestPartner::query()->with('parent')->paginate(2);
@@ -109,7 +109,7 @@ test('chunk loops over paginated hydrated models with eager loading', function (
         ]),
         // Eager load for Page 1
         // (with('parent') will not trigger another call because parent_id is false, so 0 eager loads)
-        
+
         // Page 2
         $this->jsonRpcResult([
             (object) ['id' => 3, 'name' => 'C', 'email' => null, 'active' => true, 'parent_id' => [99, 'Parent Co'], 'child_ids' => []],
@@ -118,7 +118,7 @@ test('chunk loops over paginated hydrated models with eager loading', function (
         $this->jsonRpcResult([
             (object) ['id' => 99, 'name' => 'Parent Co', 'email' => null, 'active' => true, 'parent_id' => false, 'child_ids' => []],
         ]),
-        
+
         // Page 3
         $this->jsonRpcResult([]),
     ]);
@@ -126,7 +126,7 @@ test('chunk loops over paginated hydrated models with eager loading', function (
     $iterations = 0;
     $result = TestPartner::query()->with('parent')->chunk(2, function ($results, $page) use (&$iterations) {
         $iterations++;
-        
+
         if ($page === 1) {
             expect($results)->toHaveCount(2)
                 ->and($results[0])->toBeInstanceOf(TestPartner::class)

@@ -57,6 +57,7 @@ final class LazyHasMany implements ArrayAccess, Countable, Iterator
 
     /**
      * @internal For eager loading
+     *
      * @return int[]
      */
     public function getIds(): array
@@ -66,7 +67,8 @@ final class LazyHasMany implements ArrayAccess, Countable, Iterator
 
     /**
      * @internal For eager loading
-     * @param T[] $items
+     *
+     * @param  T[]  $items
      */
     public function setLoadedItems(array $items): void
     {

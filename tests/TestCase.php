@@ -18,6 +18,23 @@ use PHPUnit\Framework\TestCase as BaseTestCase;
  */
 abstract class TestCase extends BaseTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (class_exists(\Illuminate\Container\Container::class)) {
+            $container = \Illuminate\Container\Container::getInstance();
+            if ($container && ! $container->bound('events')) {
+                $container->singleton('events', function () {
+                    return new class()
+                    {
+                        public function dispatch() {}
+                    };
+                });
+            }
+        }
+    }
+
     protected function tearDown(): void
     {
         // Cast registration is process-global static state; reset it
