@@ -82,8 +82,10 @@ test('it truncates long debug tracebacks', function () {
         $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]);
         $this->fail('Expected an OdooException to be thrown.');
     } catch (OdooException $e) {
-        // Message should contain the truncated debug text, not the full 2000 chars.
-        expect(strlen($e->getMessage()))->toBeLessThan(2000);
+        // Message should NOT contain the debug text to prevent log spam.
+        expect($e->getMessage())->not->toContain('x');
+        // The fault data should contain the truncated debug text.
+        expect(strlen($e->getFaultData()['debug']))->toBe(500);
     }
 });
 
@@ -107,4 +109,37 @@ test('it throws a connection exception on non 200 with no error envelope', funct
 
     expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
         ->toThrow(ConnectionException::class);
+});
+
+test('it parses AccessError into AccessDeniedException', function () {
+    $httpClient = $this->mockHttpClient([
+        $this->jsonRpcError('Odoo Server Error', 200, ['name' => 'odoo.exceptions.AccessError', 'message' => 'Deny']),
+    ]);
+
+    $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
+
+    expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
+        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\AccessDeniedException::class);
+});
+
+test('it parses MissingError into RecordNotFoundException', function () {
+    $httpClient = $this->mockHttpClient([
+        $this->jsonRpcError('Odoo Server Error', 200, ['name' => 'odoo.exceptions.MissingError', 'message' => 'Missing']),
+    ]);
+
+    $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
+
+    expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
+        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\RecordNotFoundException::class);
+});
+
+test('it parses ValidationError into ValidationException', function () {
+    $httpClient = $this->mockHttpClient([
+        $this->jsonRpcError('Odoo Server Error', 200, ['name' => 'odoo.exceptions.ValidationError', 'message' => 'Invalid']),
+    ]);
+
+    $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
+
+    expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
+        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class);
 });

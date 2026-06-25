@@ -5,6 +5,7 @@ namespace Athwari\LaravelOdooApi;
 use Athwari\LaravelOdooApi\Odoo\Config as OdooConfig;
 use Athwari\LaravelOdooApi\Odoo\Context;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class OdooApiServiceProvider extends ServiceProvider
@@ -49,6 +50,21 @@ class OdooApiServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/odoo-api.php' => $this->app->configPath('odoo-api.php'),
             ], 'odoo-api-config');
+        }
+
+        $this->validateConfig();
+    }
+
+    protected function validateConfig(): void
+    {
+        $host = Config::get('odoo-api.host');
+        $database = Config::get('odoo-api.database');
+        $username = Config::get('odoo-api.username');
+        $password = Config::get('odoo-api.password');
+        $apiKey = Config::get('odoo-api.api_key');
+
+        if (empty($host) || empty($database) || empty($username) || (empty($password) && empty($apiKey))) {
+            Log::warning('Odoo API configuration is incomplete. Essential values (host, database, username, password/api_key) must be set in config/odoo-api.php or .env.');
         }
     }
 }

@@ -13,6 +13,13 @@ trait HasDomain
         return $this;
     }
 
+    public function whereNot(string $field, string $operator, mixed $value): static
+    {
+        $this->domain->whereNot($field, $operator, $value);
+
+        return $this;
+    }
+
     public function orWhere(string $field, string $operator, mixed $value): static
     {
         $this->domain->orWhere($field, $operator, $value);

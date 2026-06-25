@@ -15,3 +15,4 @@ declare(strict_types=1);
 
 uses(Athwari\LaravelOdooApi\Tests\TestCase::class)->in('Unit');
 uses(Athwari\LaravelOdooApi\Tests\Integration\IntegrationTestCase::class)->in('Feature');
+uses(Orchestra\Testbench\TestCase::class)->in('Laravel');

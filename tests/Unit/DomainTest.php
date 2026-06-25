@@ -45,6 +45,28 @@ test('or where as first condition throws', function () {
     (new Domain())->orWhere('name', '=', 'A');
 })->throws(RuntimeException::class);
 
+test('where not inserts polish notation token', function () {
+    $domain = (new Domain())
+        ->whereNot('name', '=', 'A');
+
+    expect($domain->toArray())->toBe([
+        '!',
+        ['name', '=', 'A'],
+    ]);
+});
+
+test('where not combined with where', function () {
+    $domain = (new Domain())
+        ->where('active', '=', true)
+        ->whereNot('name', '=', 'A');
+
+    expect($domain->toArray())->toBe([
+        ['active', '=', true],
+        '!',
+        ['name', '=', 'A'],
+    ]);
+});
+
 test('add raw appends a raw criterion', function () {
     $domain = (new Domain())
         ->where('active', '=', true)

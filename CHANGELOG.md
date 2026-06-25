@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added `UPGRADE.md` migration guide detailing changes from v1 to v2.
+- Added boot-time configuration validation in `OdooApiServiceProvider` that logs a warning if essential Odoo config values are missing.
+- Added `AccessDeniedException` and `RecordNotFoundException` to map `odoo.exceptions.AccessError` and `odoo.exceptions.MissingError` respectively.
+- Added `whereNot()` method to the query builder to easily negate conditions.
+
+### Changed
+
+- Sanitised Odoo exception tracebacks by removing them from the exception message to prevent log spam, while keeping them truncated in the exception's fault data.
+- Added explicit `@return \Illuminate\Support\Collection` PHPDoc type hint to `RequestBuilder::collect()` to improve static analysis and IDE autocomplete.
+
 ## 1.0.0 — Initial release
 
 This package is a clean rebuild combining `icons/laravel-odoo-api`'s attribute-based ORM with hardening ported from old `icons/laravel-odoo-api`. If you're migrating from `icons/laravel-odoo-api`, read this in full before swapping packages — most of the public API is unchanged, but a few things genuinely differ.

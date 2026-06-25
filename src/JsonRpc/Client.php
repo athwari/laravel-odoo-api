@@ -2,8 +2,11 @@
 
 namespace Athwari\LaravelOdooApi\JsonRpc;
 
+use Athwari\LaravelOdooApi\Exceptions\AccessDeniedException;
 use Athwari\LaravelOdooApi\Exceptions\ConnectionException;
 use Athwari\LaravelOdooApi\Exceptions\OdooException;
+use Athwari\LaravelOdooApi\Exceptions\RecordNotFoundException;
+use Athwari\LaravelOdooApi\Exceptions\ValidationException;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
@@ -167,11 +170,24 @@ class Client
         }
 
         if (isset($data['debug'])) {
-            $debug = substr((string) $data['debug'], 0, self::DEBUG_TRUNCATE_LENGTH);
-            $message .= "\nDebug: ".$debug;
+            // Truncate the debug traceback to prevent memory bloat.
+            // We DO NOT append this to $message to prevent massive log spam 
+            // and potential SQL leakage in the host Laravel application's logs.
+            $data['debug'] = substr((string) $data['debug'], 0, self::DEBUG_TRUNCATE_LENGTH);
         }
 
-        return new OdooException(
+        $exceptionClass = OdooException::class;
+
+        if (isset($data['name'])) {
+            $exceptionClass = match ($data['name']) {
+                'odoo.exceptions.AccessError' => AccessDeniedException::class,
+                'odoo.exceptions.MissingError' => RecordNotFoundException::class,
+                'odoo.exceptions.ValidationError' => ValidationException::class,
+                default => OdooException::class,
+            };
+        }
+
+        return new $exceptionClass(
             $message,
             (int) ($error['code'] ?? 0),
             null,

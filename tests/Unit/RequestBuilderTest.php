@@ -84,3 +84,18 @@ test('create does not require a where clause', function () use ($makeEndpoint) {
 
     expect($id)->toBe(123);
 });
+
+test('collect returns an Illuminate Support Collection', function () use ($makeEndpoint) {
+    $endpoint = $makeEndpoint->call($this, [
+        $this->jsonRpcResult([
+            ['id' => 1, 'name' => 'Test 1'],
+            ['id' => 2, 'name' => 'Test 2'],
+        ]),
+    ]);
+
+    $collection = $endpoint->model('res.partner')->collect();
+
+    expect($collection)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+        ->and($collection->count())->toBe(2)
+        ->and((array) $collection->first())->toBe(['id' => 1, 'name' => 'Test 1']);
+});

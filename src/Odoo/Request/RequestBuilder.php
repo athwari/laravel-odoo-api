@@ -67,6 +67,9 @@ class RequestBuilder
     }
 
     /**
+     * Get the results as a Laravel Collection.
+     *
+     * @return \Illuminate\Support\Collection<int, \stdClass>
      * @throws ConfigurationException If Laravel's collect() helper is unavailable
      */
     public function collect(): iterable

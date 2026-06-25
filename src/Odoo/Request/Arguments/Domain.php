@@ -29,6 +29,14 @@ class Domain
         return $this;
     }
 
+    public function whereNot(string $field, string $operator, mixed $value): static
+    {
+        $this->conditions[] = '!';
+        $this->conditions[] = [$field, $operator, $value];
+
+        return $this;
+    }
+
     public function orWhere(string $field, string $operator, mixed $value): static
     {
         if ($this->isEmpty()) {
