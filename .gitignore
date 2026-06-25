@@ -38,7 +38,11 @@ Thumbs.db
 *.local
 
 # Local AI Context and Project State Logs
-ai_context/
 antigravity_state.json
 .antigravityignore
+
+# AI workspace files
+.agents/
+.agent/
+.ai_context/
 
