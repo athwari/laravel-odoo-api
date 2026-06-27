@@ -16,6 +16,7 @@ use Athwari\LaravelOdooApi\Odoo;
 use Athwari\LaravelOdooApi\Odoo\Mapping\HasFields;
 use Athwari\LaravelOdooApi\Odoo\Models\LazyHasMany;
 use Athwari\LaravelOdooApi\Odoo\Models\ModelQuery;
+use Athwari\LaravelOdooApi\OdooManager;
 use ReflectionClass;
 
 /**
@@ -47,7 +48,7 @@ class OdooModel
     /**
      * The connection resolver instance.
      *
-     * @var \Athwari\LaravelOdooApi\OdooManager|null
+     * @var OdooManager|null
      */
     protected static $resolver;
 

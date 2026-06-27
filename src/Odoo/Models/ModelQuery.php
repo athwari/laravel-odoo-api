@@ -5,6 +5,9 @@ namespace Athwari\LaravelOdooApi\Odoo\Models;
 use Athwari\LaravelOdooApi\Exceptions\ConfigurationException;
 use Athwari\LaravelOdooApi\Odoo\OdooModel;
 use Athwari\LaravelOdooApi\Odoo\Request\RequestBuilder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 
 /**
  * Wraps a RequestBuilder so its terminal methods return hydrated
@@ -73,19 +76,19 @@ final class ModelQuery
      *
      * @throws ConfigurationException
      */
-    public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): \Illuminate\Pagination\LengthAwarePaginator
+    public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): LengthAwarePaginator
     {
-        if (! class_exists(\Illuminate\Pagination\LengthAwarePaginator::class)) {
+        if (! class_exists(LengthAwarePaginator::class)) {
             throw new ConfigurationException('Pagination requires the illuminate/pagination package.');
         }
 
-        $page = $page ?: \Illuminate\Pagination\Paginator::resolveCurrentPage($pageName);
+        $page = $page ?: Paginator::resolveCurrentPage($pageName);
         $total = $this->builder->count();
 
         $models = $total ? $this->offset(($page - 1) * $perPage)->limit($perPage)->get() : [];
 
-        return new \Illuminate\Pagination\LengthAwarePaginator(collect($models), $total, $perPage, $page, [
-            'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+        return new LengthAwarePaginator(collect($models), $total, $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
     }
@@ -93,7 +96,7 @@ final class ModelQuery
     /**
      * Chunk the results of the query.
      *
-     * @param  callable(\Illuminate\Support\Collection<int, T>, int): (bool|void)  $callback
+     * @param  callable(Collection<int, T>, int): (bool|void)  $callback
      */
     public function chunk(int $count, callable $callback): bool
     {

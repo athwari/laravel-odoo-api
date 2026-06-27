@@ -141,7 +141,7 @@ class Odoo
 
     private function object(): ObjectEndpoint
     {
-        if (! $this->object instanceof \Athwari\LaravelOdooApi\Odoo\Endpoint\ObjectEndpoint) {
+        if (! $this->object instanceof ObjectEndpoint) {
             $this->connect();
         }
 

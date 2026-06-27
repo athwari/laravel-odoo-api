@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Athwari\LaravelOdooApi\Facades;
 
+use Athwari\LaravelOdooApi\OdooManager;
 use Illuminate\Support\Facades\Facade;
 
 /**
@@ -20,13 +21,13 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Athwari\LaravelOdooApi\Odoo connection(?string $name = null)
  * @method static \Athwari\LaravelOdooApi\Testing\OdooFake fake()
  *
- * @see \Athwari\LaravelOdooApi\OdooManager
+ * @see OdooManager
  * @see \Athwari\LaravelOdooApi\Odoo
  */
 class Odoo extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Athwari\LaravelOdooApi\OdooManager::class;
+        return OdooManager::class;
     }
 }

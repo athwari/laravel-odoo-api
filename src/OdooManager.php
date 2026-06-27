@@ -13,14 +13,14 @@ class OdooManager
     /**
      * The application instance.
      *
-     * @var \Illuminate\Contracts\Foundation\Application
+     * @var Application
      */
     protected $app;
 
     /**
      * The active connection instances.
      *
-     * @var array<string, \Athwari\LaravelOdooApi\Odoo>
+     * @var array<string, Odoo>
      */
     protected $connections = [];
 
@@ -60,7 +60,7 @@ class OdooManager
      * Make the Odoo connection instance.
      *
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function makeConnection(string $name): Odoo
     {
@@ -98,7 +98,7 @@ class OdooManager
      * Get the configuration for a connection.
      *
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function configuration(string $name): array
     {

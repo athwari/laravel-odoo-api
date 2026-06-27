@@ -7,6 +7,8 @@ use Athwari\LaravelOdooApi\JsonRpc\Client;
 use Athwari\LaravelOdooApi\Odoo\Config;
 use Athwari\LaravelOdooApi\Odoo\Context;
 use Athwari\LaravelOdooApi\Odoo\Endpoint\ObjectEndpoint;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 $makeEndpoint = function (array $responses): ObjectEndpoint {
     $config = new Config('test_db', 'https://example.odoo.com', 'admin', 'admin');
@@ -95,7 +97,7 @@ test('collect returns an Illuminate Support Collection', function () use ($makeE
 
     $collection = $endpoint->model('res.partner')->collect();
 
-    expect($collection)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+    expect($collection)->toBeInstanceOf(Collection::class)
         ->and($collection->count())->toBe(2)
         ->and((array) $collection->first())->toBe(['id' => 1, 'name' => 'Test 1']);
 });
@@ -111,7 +113,7 @@ test('paginate returns a LengthAwarePaginator of generic objects', function () u
 
     $paginator = $endpoint->model('res.partner')->paginate(2);
 
-    expect($paginator)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+    expect($paginator)->toBeInstanceOf(LengthAwarePaginator::class)
         ->and($paginator->total())->toBe(15)
         ->and($paginator->perPage())->toBe(2)
         ->and($paginator->items())->toHaveCount(2)
@@ -125,7 +127,7 @@ test('paginate returns empty paginator when count is zero', function () use ($ma
 
     $paginator = $endpoint->model('res.partner')->paginate(2);
 
-    expect($paginator)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+    expect($paginator)->toBeInstanceOf(LengthAwarePaginator::class)
         ->and($paginator->total())->toBe(0)
         ->and($paginator->items())->toBeEmpty();
 });
@@ -188,7 +190,7 @@ test('createMany throws on empty data', function () use ($makeEndpoint) {
     $endpoint = $makeEndpoint->call($this, []);
 
     expect(fn () => $endpoint->model('res.partner')->createMany([]))
-        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class);
+        ->toThrow(ValidationException::class);
 });
 
 test('writeMany groups identical payloads into a single rpc call', function () use ($makeEndpoint) {
@@ -233,7 +235,7 @@ test('writeMany throws on empty data', function () use ($makeEndpoint) {
     $endpoint = $makeEndpoint->call($this, []);
 
     expect(fn () => $endpoint->model('res.partner')->writeMany([]))
-        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class);
+        ->toThrow(ValidationException::class);
 });
 
 test('writeMany throws on invalid payload structure', function () use ($makeEndpoint) {
@@ -241,9 +243,9 @@ test('writeMany throws on invalid payload structure', function () use ($makeEndp
 
     expect(fn () => $endpoint->model('res.partner')->writeMany([
         ['id' => 1], // missing 'values'
-    ]))->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class);
+    ]))->toThrow(ValidationException::class);
 
     expect(fn () => $endpoint->model('res.partner')->writeMany([
         ['values' => ['state' => 'done']], // missing 'id'
-    ]))->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class);
+    ]))->toThrow(ValidationException::class);
 });

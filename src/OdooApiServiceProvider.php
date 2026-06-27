@@ -2,6 +2,10 @@
 
 namespace Athwari\LaravelOdooApi;
 
+use Athwari\LaravelOdooApi\Commands\CheckConfigCommand;
+use Athwari\LaravelOdooApi\Commands\FieldsCommand;
+use Athwari\LaravelOdooApi\Commands\PingCommand;
+use Athwari\LaravelOdooApi\Odoo\OdooModel;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
@@ -21,7 +25,7 @@ class OdooApiServiceProvider extends ServiceProvider
         });
 
         // Ensure OdooModel uses the Manager for resolving connections.
-        \Athwari\LaravelOdooApi\Odoo\OdooModel::setConnectionResolver($this->app->make(OdooManager::class));
+        OdooModel::setConnectionResolver($this->app->make(OdooManager::class));
     }
 
     public function boot(): void
@@ -32,9 +36,9 @@ class OdooApiServiceProvider extends ServiceProvider
             ], 'odoo-api-config');
 
             $this->commands([
-                \Athwari\LaravelOdooApi\Commands\PingCommand::class,
-                \Athwari\LaravelOdooApi\Commands\FieldsCommand::class,
-                \Athwari\LaravelOdooApi\Commands\CheckConfigCommand::class,
+                PingCommand::class,
+                FieldsCommand::class,
+                CheckConfigCommand::class,
             ]);
         }
 

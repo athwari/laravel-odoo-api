@@ -2,6 +2,8 @@
 
 namespace Athwari\LaravelOdooApi\Tests\Laravel;
 
+use Athwari\LaravelOdooApi\Exceptions\AuthenticationException;
+use Athwari\LaravelOdooApi\Exceptions\ConnectionException;
 use Athwari\LaravelOdooApi\Odoo;
 use Athwari\LaravelOdooApi\Odoo\Config;
 use Athwari\LaravelOdooApi\Odoo\Models\Version;
@@ -80,7 +82,7 @@ test('odoo:ping fails when authentication fails', function () {
     $config = new Config('test_db', 'https://example.odoo.com', 'admin', 'wrong_pass');
     $odoo->shouldReceive('getConfig')->andReturn($config);
     $odoo->shouldReceive('version')->once()->andReturn(makeVersion());
-    $odoo->shouldReceive('connect')->once()->with(true)->andThrow(new \Athwari\LaravelOdooApi\Exceptions\AuthenticationException('Access Denied'));
+    $odoo->shouldReceive('connect')->once()->with(true)->andThrow(new AuthenticationException('Access Denied'));
 
     $this->app->instance(Odoo::class, $odoo);
 
@@ -94,7 +96,7 @@ test('odoo:ping fails when connection fails', function () {
 
     $config = new Config('test_db', 'https://example.odoo.com', 'admin', 'admin');
     $odoo->shouldReceive('getConfig')->andReturn($config);
-    $odoo->shouldReceive('version')->once()->andThrow(new \Athwari\LaravelOdooApi\Exceptions\ConnectionException('cURL error 28: Timeout'));
+    $odoo->shouldReceive('version')->once()->andThrow(new ConnectionException('cURL error 28: Timeout'));
 
     $this->app->instance(Odoo::class, $odoo);
 

@@ -2,8 +2,11 @@
 
 namespace Athwari\LaravelOdooApi\Tests\Unit;
 
+use Athwari\LaravelOdooApi\Exceptions\AccessDeniedException;
 use Athwari\LaravelOdooApi\Exceptions\ConnectionException;
 use Athwari\LaravelOdooApi\Exceptions\OdooException;
+use Athwari\LaravelOdooApi\Exceptions\RecordNotFoundException;
+use Athwari\LaravelOdooApi\Exceptions\ValidationException;
 use Athwari\LaravelOdooApi\JsonRpc\Client;
 use GuzzleHttp\Psr7\Response;
 
@@ -120,7 +123,7 @@ test('it parses AccessError into AccessDeniedException', function () {
     $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
 
     expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
-        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\AccessDeniedException::class);
+        ->toThrow(AccessDeniedException::class);
 });
 
 test('it parses MissingError into RecordNotFoundException', function () {
@@ -131,7 +134,7 @@ test('it parses MissingError into RecordNotFoundException', function () {
     $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
 
     expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
-        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\RecordNotFoundException::class);
+        ->toThrow(RecordNotFoundException::class);
 });
 
 test('it parses ValidationError into ValidationException', function () {
@@ -142,7 +145,7 @@ test('it parses ValidationError into ValidationException', function () {
     $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
 
     expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'read', [[1]]))
-        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class);
+        ->toThrow(ValidationException::class);
 });
 
 test('it retries on a concurrent update exception and succeeds', function () {
@@ -190,5 +193,5 @@ test('it does not retry validation errors', function () {
     $client = new Client('https://example.odoo.com', 'object', 30, true, $httpClient);
 
     expect(fn () => $client->execute_kw('test_db', 1, 'secret', 'res.partner', 'write', [[1]]))
-        ->toThrow(\Athwari\LaravelOdooApi\Exceptions\ValidationException::class, 'Invalid email address');
+        ->toThrow(ValidationException::class, 'Invalid email address');
 });

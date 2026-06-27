@@ -10,7 +10,7 @@ trait HasCache
     /**
      * The number of seconds or Time to Live for the cache.
      *
-     * @var \DateTimeInterface|\DateInterval|int|null
+     * @var DateTimeInterface|DateInterval|int|null
      */
     protected $cacheTtl;
 

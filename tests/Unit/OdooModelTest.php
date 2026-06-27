@@ -9,6 +9,7 @@ use Athwari\LaravelOdooApi\Odoo\Config;
 use Athwari\LaravelOdooApi\Odoo\Context;
 use Athwari\LaravelOdooApi\Odoo\Endpoint\ObjectEndpoint;
 use Athwari\LaravelOdooApi\Tests\Models\TestPartner;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 $bindOdoo = function (array $responses): Odoo {
     $config = new Config('test_db', 'https://example.odoo.com', 'admin', 'admin');
@@ -70,7 +71,7 @@ test('paginate returns a LengthAwarePaginator of models', function () use ($bind
 
     $paginator = TestPartner::query()->paginate(2);
 
-    expect($paginator)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+    expect($paginator)->toBeInstanceOf(LengthAwarePaginator::class)
         ->and($paginator->total())->toBe(15)
         ->and($paginator->perPage())->toBe(2)
         ->and($paginator->items())->toHaveCount(2)
@@ -92,7 +93,7 @@ test('paginate preserves with() eager loading and does not N+1', function () use
 
     $paginator = TestPartner::query()->with('parent')->paginate(2);
 
-    expect($paginator)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+    expect($paginator)->toBeInstanceOf(LengthAwarePaginator::class)
         ->and($paginator->items()[0]->parent)->toBeInstanceOf(TestPartner::class)
         ->and($paginator->items()[0]->parent->name)->toBe('Parent Co')
         // Eager loader prevents a second fetch for Child B's parent

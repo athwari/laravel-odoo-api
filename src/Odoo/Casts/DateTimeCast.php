@@ -50,7 +50,7 @@ class DateTimeCast extends Cast
         try {
             $dt = new DateTime($raw);
 
-            if ($this->timezone instanceof \DateTimeZone) {
+            if ($this->timezone instanceof DateTimeZone) {
                 $dt->setTimezone($this->timezone);
             }
 

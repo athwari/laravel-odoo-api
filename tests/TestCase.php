@@ -7,6 +7,7 @@ use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 
 /**
@@ -22,8 +23,8 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        if (class_exists(\Illuminate\Container\Container::class)) {
-            $container = \Illuminate\Container\Container::getInstance();
+        if (class_exists(Container::class)) {
+            $container = Container::getInstance();
             if ($container && ! $container->bound('events')) {
                 $container->singleton('events', function () {
                     return new class()

@@ -15,6 +15,9 @@ use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasOffset;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasOptions;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\HasOrder;
 use Athwari\LaravelOdooApi\Odoo\Request\Arguments\Options;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class RequestBuilder
@@ -119,7 +122,7 @@ class RequestBuilder
     /**
      * Get the results as a Laravel Collection.
      *
-     * @return \Illuminate\Support\Collection<int, \stdClass>
+     * @return Collection<int, \stdClass>
      *
      * @throws ConfigurationException If Laravel's collect() helper is unavailable
      */
@@ -137,18 +140,18 @@ class RequestBuilder
      *
      * @throws ConfigurationException
      */
-    public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): \Illuminate\Pagination\LengthAwarePaginator
+    public function paginate(int $perPage = 15, string $pageName = 'page', ?int $page = null): LengthAwarePaginator
     {
-        if (! class_exists(\Illuminate\Pagination\LengthAwarePaginator::class)) {
+        if (! class_exists(LengthAwarePaginator::class)) {
             throw new ConfigurationException('Pagination requires the illuminate/pagination package.');
         }
 
-        $page = $page ?: \Illuminate\Pagination\Paginator::resolveCurrentPage($pageName);
+        $page = $page ?: Paginator::resolveCurrentPage($pageName);
         $total = $this->count();
         $results = $total ? $this->offset(($page - 1) * $perPage)->limit($perPage)->collect() : collect();
 
-        return new \Illuminate\Pagination\LengthAwarePaginator($results, $total, $perPage, $page, [
-            'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+        return new LengthAwarePaginator($results, $total, $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
     }
@@ -156,7 +159,7 @@ class RequestBuilder
     /**
      * Chunk the results of the query.
      *
-     * @param  callable(\Illuminate\Support\Collection<int, \stdClass>, int): (bool|void)  $callback
+     * @param  callable(Collection<int, \stdClass>, int): (bool|void)  $callback
      */
     public function chunk(int $count, callable $callback): bool
     {

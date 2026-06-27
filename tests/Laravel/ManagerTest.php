@@ -3,6 +3,7 @@
 namespace Athwari\LaravelOdooApi\Tests\Laravel;
 
 use Athwari\LaravelOdooApi\Facades\Odoo as OdooFacade;
+use Athwari\LaravelOdooApi\Odoo;
 use Athwari\LaravelOdooApi\OdooApiServiceProvider;
 use Athwari\LaravelOdooApi\OdooManager;
 use InvalidArgumentException;
@@ -102,6 +103,6 @@ test('di resolves default connection instance directly', function () {
         ],
     ]);
 
-    $odoo = $this->app->make(\Athwari\LaravelOdooApi\Odoo::class);
+    $odoo = $this->app->make(Odoo::class);
     expect($odoo->getConfig()->getDatabase())->toBe('db_default');
 });
